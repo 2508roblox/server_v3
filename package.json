@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon ./src/server.js"
+    "start": "nodemon server.js",
+    "server": "nodemon --exec babel-node --presets=@babel/preset-env  server.js"
   },
   "author": "",
   "license": "ISC",
@@ -21,6 +22,9 @@
     "sequelize": "^6.34.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.23.3",
+    "@babel/node": "^7.22.19",
+    "@babel/preset-env": "^7.23.3",
     "sequelize-cli": "^6.6.2"
   }
 }
