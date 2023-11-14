@@ -3,8 +3,9 @@ const router = express.Router();
 const db = require('../models');
 import authController from '../controllers/authController'
 // Home page route.
-router.get("/register", authController.register);
-router.get("/login", authController.login);
+router.post("/register", authController.register);
+router.post("/login", authController.login);
+router.post("/logout", authController.logout);
 
 // About page route.
 router.get("/about", function (req, res) {
