@@ -4,6 +4,7 @@ const db = require('../models');
 import authController from '../controllers/authController'
 // Home page route.
 router.get("/register", authController.register);
+router.get("/login", authController.login);
 
 // About page route.
 router.get("/about", function (req, res) {
