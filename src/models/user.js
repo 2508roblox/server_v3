@@ -26,21 +26,17 @@ module.exports = (sequelize, DataTypes) => {
       hooks: {
         beforeCreate: async (user) => {
           if (user.password) {
-            bcrypt.genSalt(10, function(err, salt) {
-              bcrypt.hash(user.password, salt, function(err, hash) {
-                user.password  = hash
-                console.log('check hash', hash )
-              });
-          });
-
-
-
+            const salt = await bcrypt.genSalt(10);
+            const hash = await bcrypt.hash(user.password, salt);
+            user.password = hash;
+            console.log('check hash', hash);
           }
         },
+        
         beforeUpdate: async (user) => {
           if (user.password) {
-            const salt = await bcrypt.genSaltSync(10, "a");
-            user.password = bcrypt.hashSync(user.password, salt);
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(user.password, salt);
           }
         },
       },
@@ -48,6 +44,7 @@ module.exports = (sequelize, DataTypes) => {
   );
 
 User.prototype.isValidPassword = async function (userInputtedPassword, hashedPassword) {
+   console.log(userInputtedPassword, hashedPassword)
   try {
     const result = await bcrypt.compare(userInputtedPassword, hashedPassword);
     return result;

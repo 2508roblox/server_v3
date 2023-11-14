@@ -1,52 +1,55 @@
 import asyncHandler from "express-async-handler";
 import db from "../models";
-import { generateToken } from "../utils/generateToken";
+import { generateToken, verifyToken } from "../utils/generateToken";
+
+const handleCookieOptions = {
+  httpOnly: true,
+  secure: true,
+};
 
 const register = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  //authentication
-  let existUser = await db.User.findOne({ where: { email } });
-  if (existUser) return res.status(400).json("email has already been using");
-  let newUser = await db.User.create({ email, password });
-  //authorization
-  let { accessToken, refreshToken } = generateToken(newUser.id);
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    // Nếu bạn muốn chỉ cho phép gửi Refresh Token qua kênh HTTPS, hãy sử dụng secure: true
-    secure: true,
-  });
+
+  const existUser = await db.User.findOne({ where: { email } });
+  if (existUser) {
+    return res.status(400).json("Email is already used");
+  }
+
+  const newUser = await db.User.create({ email, password });
+
+  const { accessToken, refreshToken } = generateToken({ userId: newUser.id });
+  res.cookie("refreshToken", refreshToken, handleCookieOptions);
+
   return res.status(200).json({
     userId: newUser.id,
     email: newUser.email,
-    password: newUser.password,
     accessToken,
   });
 });
 
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  //authentication
-  let existUser = await db.User.findOne({ where: { email } });
-  if (!existUser) return res.status(400).json("Email is not exist");
-  let comparePassword = await existUser.isValidPassword(
-    password,
-    existUser.password
-  );
-  console.log("check pass" + comparePassword);
-  if (!comparePassword) return res.status(400).json("Password do not match");
-  //authorization
-  let { accessToken, refreshToken } = generateToken(existUser.id);
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    // Nếu bạn muốn chỉ cho phép gửi Refresh Token qua kênh HTTPS, hãy sử dụng secure: true
-    secure: true,
-  });
+
+  const existUser = await db.User.findOne({ where: { email } });
+  if (!existUser) {
+    return res.status(400).json("Email does not exist");
+  }
+
+  const comparePassword = await existUser.isValidPassword(password, existUser.password);
+  if (!comparePassword) {
+    return res.status(400).json("Password does not match");
+  }
+
+  const { accessToken, refreshToken } = generateToken({ userId: existUser.id });
+  res.cookie("refreshToken", refreshToken, handleCookieOptions);
+
   return res.status(200).json({
     userId: existUser.id,
     email: existUser.email,
     accessToken,
   });
 });
+
 const logout = asyncHandler(async (req, res) => {
   res
     .cookie("refreshToken", "", {
@@ -57,8 +60,23 @@ const logout = asyncHandler(async (req, res) => {
     .send("Logged out successfully!");
 });
 
-module.exports = {
-  register,
-  login,
-  logout,
-};
+const refresh = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.cookies;
+
+  if (!refreshToken) {
+    return res.status(401).json({ message: "Not Authenticated" });
+  }
+
+  try {
+    const decoded = verifyToken(refreshToken, "refresh");
+    const { userId } = decoded;
+
+    const { accessToken } = generateToken({ userId });
+
+    res.json({ accessToken });
+  } catch (error) {
+    res.status(403).json({ message: "Invalid refresh token" });
+  }
+});
+
+module.exports = { register, login, logout, refresh };

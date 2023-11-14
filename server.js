@@ -1,23 +1,25 @@
-const express = require("express");
+import express from "express";
 import cors from "cors";
-var bodyParser = require("body-parser");
-require("dotenv").config();
-const authRouter = require("./src/router/authRoute");
+import bodyParser from "body-parser";
+import cookieParser from "cookie-parser";
+import dotenv from "dotenv";
+import authRouter from "./src/router/authRoute";
 import { notFound, errorHandler } from "./src/middleware/errorMiddleware";
+
+dotenv.config();
 const port = process.env.PORT || 4000;
 const app = express();
-// middleware
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(cookieParser());
 
-// apis
 app.use("/api/auth", authRouter);
-
 app.use(notFound);
 app.use(errorHandler);
 
 app.listen(port, () => {
-  console.log("connect success on " + port);
+  console.log("Connected on port " + port);
 });
